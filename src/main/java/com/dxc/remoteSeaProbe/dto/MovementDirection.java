@@ -1,32 +1,47 @@
 package com.dxc.remoteSeaProbe.dto;
 
+import lombok.Getter;
+
+@Getter
 public enum MovementDirection {
 
-    LEFT(2, 0, -2),        // move 2 feet west  → lon -2
-    RIGHT(4, 0, 4),        // move 4 feet east → lon +4
-    FORWARD(1, 1, 0),      // move 1 foot north → lat +1
-    BACKWARD(1, -1, 0),    // move 1 foot south → lat -1
-    STAY(0, 0, 0);         // no movement
+    LEFT(-2, 0),       // move west by 2 feet → longitude -2
+    RIGHT(2, 0),       // move east by 2 feet → longitude +2
+    FORWARD(0, 1),     // move north by 1 → latitude +1
+    BACKWARD(0, -1),   // move south by -1 → latitude -1
+    STAY(0, 0);        // no movement
 
-    private final int feet;
-    private final int latDelta;
-    private final int lonDelta;
+    private final int deltaLongitude;
+    private final int deltaLatitude;
 
-    MovementDirection(int feet, int latDelta, int lonDelta) {
-        this.feet = feet;
-        this.latDelta = latDelta;
-        this.lonDelta = lonDelta;
+    MovementDirection(int deltaLongitude, int deltaLatitude) {
+        this.deltaLongitude = deltaLongitude;
+        this.deltaLatitude = deltaLatitude;
     }
 
-    public int getFeet() {
-        return feet;
+    public long calculateLatitude(long currentLatitude) {
+        return currentLatitude + deltaLatitude;
     }
 
-    public int getLatDelta() {
-        return latDelta;
+    public long calculateLongitude(long currentLongitude) {
+        return currentLongitude + deltaLongitude;
     }
 
-    public int getLonDelta() {
-        return lonDelta;
+    public static MovementDirection fromString(String action) {
+        if (action == null) {
+            throw new IllegalArgumentException("Movement action cannot be null");
+        }
+
+        try {
+            return MovementDirection.valueOf(action.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid movement action: " + action +
+                                               ". Allowed values: left, right, forward, backward, stay");
+        }
+    }
+
+    public Coordinates move(ProbeResponse probe) {
+        return new Coordinates(probe.getLatitude() + deltaLatitude, probe.getLongitude() + deltaLongitude);
     }
 }
+
