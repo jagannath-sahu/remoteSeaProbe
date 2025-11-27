@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  postgresql-nar:
+    image: bitnami/postgresql:16.6.0
+    container_name: postgresql-nar
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRESQL_USERNAME=local"
+      - "POSTGRESQL_PASSWORD=password123"
+      - "POSTGRESQL_DATABASE=aionar"
+      - "POSTGRESQL_POSTGRES_PASSWORD=localadmin"
+    volumes:
+      - "nar-postgres_data:/bitnami/postgresql"
+
+volumes:
+  nar-postgres_data:
