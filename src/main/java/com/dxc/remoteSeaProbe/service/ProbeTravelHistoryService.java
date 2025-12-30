@@ -2,6 +2,7 @@ package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.MovementDirection;
 import com.dxc.remoteSeaProbe.dto.MovementRequest;
+import com.dxc.remoteSeaProbe.dto.ProbeResponse;
 import com.dxc.remoteSeaProbe.dto.TravelHistoryResponse;
 import com.dxc.remoteSeaProbe.persistence.entity.ProbeTravelHistory;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
@@ -39,17 +40,21 @@ public class ProbeTravelHistoryService {
         history.setLatitude(newPosition.latitude());
         history.setLongitude(newPosition.longitude());
         RemoteSeaProbe remoteSeaProbe = new RemoteSeaProbe();
+        setRemoteSeaProbe(remoteSeaProbe, probe);
+        history.setProbe(remoteSeaProbe);
+        history.setCreatedAt(LocalDateTime.now());
+        ProbeTravelHistory saved = historyRepository.save(history);
+
+        return toResponse(saved);
+    }
+
+    private static void setRemoteSeaProbe(RemoteSeaProbe remoteSeaProbe, ProbeResponse probe) {
         remoteSeaProbe.setId(probe.getId());
         remoteSeaProbe.setName(probe.getName());
         remoteSeaProbe.setCreatedAt(probe.getCreatedAt());
         remoteSeaProbe.setInitialLongitude(probe.getLongitude());
         remoteSeaProbe.setInitialLatitude(probe.getLatitude());
         remoteSeaProbe.setDirectionFacing(probe.getDirectionFacing());
-        history.setProbe(remoteSeaProbe);
-        history.setCreatedAt(LocalDateTime.now());
-        ProbeTravelHistory saved = historyRepository.save(history);
-
-        return toResponse(saved);
     }
 
     public List<TravelHistoryResponse> getFullHistory(Long probeId) {

@@ -30,7 +30,5 @@ public class ProbeResponse {
         this.directionFacing = directionFacing;
         this.createdAt = createdAt;
     }
-
-    // getters only (no setters)
 }
 
