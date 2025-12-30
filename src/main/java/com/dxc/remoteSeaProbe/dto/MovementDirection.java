@@ -19,14 +19,6 @@ public enum MovementDirection {
         this.deltaLatitude = deltaLatitude;
     }
 
-    public long calculateLatitude(long currentLatitude) {
-        return currentLatitude + deltaLatitude;
-    }
-
-    public long calculateLongitude(long currentLongitude) {
-        return currentLongitude + deltaLongitude;
-    }
-
     public static MovementDirection fromString(String action) {
         if (action == null) {
             throw new IllegalArgumentException("Movement action cannot be null");

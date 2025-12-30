@@ -1,3 +1,4 @@
+/*
 package com.dxc.remoteSeaProbe.service;
 
 import jakarta.annotation.PostConstruct;
@@ -39,3 +40,4 @@ public class PostgresTestService {
     }
 }
 
+*/
