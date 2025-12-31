@@ -58,6 +58,7 @@ class ProbeTravelHistoryServiceTest {
 
         verify(remoteSeaProbeService).getProbe(1L);
         verify(historyRepository).save(any());
+        assertNotNull(historyService.getFullHistory(1L));
     }
 }
 
