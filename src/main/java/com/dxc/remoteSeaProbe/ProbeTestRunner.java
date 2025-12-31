@@ -17,7 +17,7 @@ public class ProbeTestRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println(probeClient.ping());
+        System.out.println("ProbeTestRunner : " + probeClient.ping());
     }
 }
 
