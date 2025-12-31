@@ -1,0 +1,319 @@
+# 0️⃣ First: when do you REALLY need auto-configuration?
+
+Auto-configuration is **NOT** for:
+
+* Your normal application beans
+* Controllers, services, repos
+* Internal logic
+
+Auto-configuration **IS** for:
+
+* Libraries / shared modules
+* Starters (`spring-boot-starter-*`)
+* Infrastructure setup
+* Conditional wiring
+
+### Real examples:
+
+* `DataSourceAutoConfiguration`
+* `KafkaAutoConfiguration`
+* `RedisAutoConfiguration`
+* `JpaRepositoriesAutoConfiguration`
+
+Rule of thumb:
+
+> If users of your code should “just add a dependency and it works”, you need auto-config.
+
+---
+
+# 1️⃣ What auto-configuration REALLY is (mental model)
+
+Auto-configuration is just:
+
+```java
+@Configuration
+@Conditional(...)
+public class SomethingAutoConfiguration {
+    @Bean
+    ...
+}
+```
+
+Nothing magical.
+
+Spring Boot:
+
+* Scans auto-config classes
+* Evaluates conditions
+* Registers beans **only if conditions match**
+
+---
+
+# 2️⃣ Let’s build a REAL auto-configuration (hands-on lab)
+
+We’ll create:
+
+> **RemoteSeaProbe Starter** that auto-configures a probe client
+
+You’ll be able to:
+
+* Add dependency
+* Get bean automatically
+* Override it
+* See it in `/actuator/beans`
+
+---
+
+## Step 1️⃣ Create a new package (IMPORTANT separation)
+
+```text
+com.dxc.remoteSeaProbe.autoconfig
+```
+
+Never put auto-config in your normal `service` package.
+
+---
+
+## Step 2️⃣ Create a simple service (library-style)
+
+```java
+package com.dxc.remoteSeaProbe.core;
+
+public class ProbeClient {
+
+    private final String endpoint;
+
+    public ProbeClient(String endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public String ping() {
+        return "Pinging " + endpoint;
+    }
+}
+```
+
+No Spring annotations here ❌
+This simulates a **real library class**.
+
+---
+
+## Step 3️⃣ Create configuration properties (VERY IMPORTANT)
+
+```java
+package com.dxc.remoteSeaProbe.autoconfig;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "probe")
+public class ProbeProperties {
+
+    private String endpoint = "http://localhost:9999";
+
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
+}
+```
+
+✔ Externalized config
+✔ IDE autocomplete
+✔ Type-safe
+
+---
+
+## Step 4️⃣ Create the Auto-Configuration class
+
+```java
+package com.dxc.remoteSeaProbe.autoconfig;
+
+import com.dxc.remoteSeaProbe.core.ProbeClient;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(ProbeProperties.class)
+@ConditionalOnProperty(prefix = "probe", name = "enabled", havingValue = "true", matchIfMissing = true)
+public class ProbeAutoConfiguration {
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ProbeClient probeClient(ProbeProperties properties) {
+        return new ProbeClient(properties.getEndpoint());
+    }
+}
+```
+
+### Read this CAREFULLY:
+
+* `@ConditionalOnProperty` → user can disable it
+* `@ConditionalOnMissingBean` → user can override
+* `@EnableConfigurationProperties` → binds config
+
+This is **exactly how Spring Boot does it**.
+
+---
+
+# 5️⃣ Register auto-configuration (THIS IS CRITICAL)
+
+### Spring Boot 3.x+
+
+Create file:
+
+```text
+src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+```
+
+Add:
+
+```text
+com.dxc.remoteSeaProbe.autoconfig.ProbeAutoConfiguration
+```
+
+⚠️ Without this file, auto-config WILL NOT load.
+
+---
+
+# 6️⃣ Test it in your SAME project (local lab)
+
+### application-local.yml
+
+```yaml
+probe:
+  enabled: true
+  endpoint: http://remote-sea-probe
+```
+
+---
+
+### Inject and test
+
+```java
+@Component
+@Profile("local")
+public class ProbeTestRunner implements CommandLineRunner {
+
+    private final ProbeClient probeClient;
+
+    public ProbeTestRunner(ProbeClient probeClient) {
+        this.probeClient = probeClient;
+    }
+
+    @Override
+    public void run(String... args) {
+        System.out.println(probeClient.ping());
+    }
+}
+```
+
+Expected output:
+
+```text
+Pinging http://remote-sea-probe
+```
+
+🎉 You just wrote real auto-configuration.
+
+---
+
+# 7️⃣ Verify using Actuator (DO THIS)
+
+```bash
+/actuator/beans
+```
+
+Search for:
+
+```text
+probeClient
+ProbeAutoConfiguration
+```
+
+And:
+
+```bash
+/actuator/conditions
+```
+
+You’ll see:
+
+* Why it matched
+* Which condition enabled it
+
+---
+
+# 8️⃣ Test override behavior (IMPORTANT)
+
+### User defines own bean:
+
+```java
+@Configuration
+public class CustomProbeConfig {
+
+    @Bean
+    public ProbeClient probeClient() {
+        return new ProbeClient("custom-endpoint");
+    }
+}
+```
+
+Result:
+
+* Auto-config backs off
+* Your bean wins
+
+✔ This is **mandatory for good starters**
+
+---
+
+# 9️⃣ When auto-configuration surprises people
+
+Common causes:
+
+* Classpath condition matched unexpectedly
+* Property default `matchIfMissing = true`
+* Bean already exists
+* Profile not active
+
+This is why `/actuator/conditions` exists.
+
+---
+
+# 🔟 Interview-level explanation
+
+**Q:** Why use auto-configuration instead of normal `@Configuration`?
+
+**A:**
+
+> Auto-configuration allows conditional, opt-in bean creation based on classpath, properties, and existing beans, enabling libraries to integrate seamlessly without explicit configuration.
+
+---
+
+# 🔥 Golden rules (WRITE THESE)
+
+1. Auto-config lives in **separate package/module**
+2. Always allow override (`@ConditionalOnMissingBean`)
+3. Always provide properties
+4. Always document disable switch
+5. Always verify with Actuator
+
+---
+
+# Next things (high value)
+
+If you want, next we can:
+
+* Split this into a **real starter module**
+* Add `@ConditionalOnClass`
+* Add tests using `ApplicationContextRunner`
+* Debug auto-config order
+* Write failure analyzer
+
+Just tell me 👍
