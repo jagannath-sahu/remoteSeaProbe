@@ -1,4 +1,4 @@
-package com.dxc.remoteSeaProbe.test;
+package com.dxc.remoteSeaProbe.sample;
 
 import lombok.Getter;
 import org.springframework.stereotype.Service;

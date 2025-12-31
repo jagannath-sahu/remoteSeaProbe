@@ -1,4 +1,4 @@
-package com.dxc.remoteSeaProbe.test;
+package com.dxc.remoteSeaProbe.sample;
 
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;

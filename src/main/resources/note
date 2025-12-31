@@ -319,3 +319,11 @@ If you want next:
 * Real production logging patterns
 
 Just tell me 👍
+-----------------------------------------------------------------
+Client Request
+   ↓
+[Correlation-ID = abc-123]
+   ↓
+Controller → Service → DB → Kafka
+   ↓
+All logs contain abc-123

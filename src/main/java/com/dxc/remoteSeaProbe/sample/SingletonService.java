@@ -1,4 +1,4 @@
-package com.dxc.remoteSeaProbe.test;
+package com.dxc.remoteSeaProbe.sample;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
