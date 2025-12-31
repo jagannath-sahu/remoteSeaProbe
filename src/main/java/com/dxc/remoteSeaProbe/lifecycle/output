@@ -115,7 +115,11 @@ So let’s fix the conceptual gaps.
 
 If `message` is **constant config**, initialize it via constructor or `@Value`.
 
-```java
+The @Value annotation in Spring Boot is used to inject values into fields, method parameters,
+or constructor arguments from application.properties, application.yml, environment variables,
+system properties, or even Spring Expression Language (SpEL) expressions.
+
+Example: Injecting from application.properties
 @Component
 public class DemoService {
 

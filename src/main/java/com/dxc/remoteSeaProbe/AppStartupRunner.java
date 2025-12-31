@@ -3,10 +3,12 @@ package com.dxc.remoteSeaProbe;
 import com.dxc.remoteSeaProbe.lifecycle.ContextAwareBean;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class AppStartupRunner implements CommandLineRunner {
-
+    private static final Logger log = LoggerFactory.getLogger(AppStartupRunner.class);
     private final ContextAwareBean contextAwareBean;
 
     public AppStartupRunner(ContextAwareBean contextAwareBean) {
@@ -15,9 +17,9 @@ public class AppStartupRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println("AppStartupRunner start ...");
+        log.info("AppStartupRunner started ...");
         contextAwareBean.showAllBeans();
-        System.out.println("AppStartupRunner end ...");
+        log.info("AppStartupRunner end ...");
     }
 }
 
