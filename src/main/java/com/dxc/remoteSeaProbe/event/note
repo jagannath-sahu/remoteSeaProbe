@@ -1,0 +1,46 @@
+correct solution depends on WHAT you are initializing.
+
+Examples:
+
+Load cache from DB
+
+Warm up Redis
+
+Call another service
+
+Validate configuration
+
+Create background tasks
+
+Run one-time migration logic
+
+Schedule periodic jobs
+
+Option 4: ApplicationReadyEvent ⭐ (PRODUCTION-GRADE)
+@Component
+public class StartupListener {
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onApplicationReady() {
+        // initialization logic
+    }
+}
+
+Why this is excellent
+
+✔ App is fully started
+✔ Embedded server is up
+✔ All beans are ready
+✔ Profiles & configs resolved
+
+This is my recommended default
+
+Use this when:
+
+You call external services
+
+You load cache
+
+You warm up systems
+
+You want “after everything is ready”
