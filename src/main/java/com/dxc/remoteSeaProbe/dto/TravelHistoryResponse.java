@@ -2,6 +2,7 @@ package com.dxc.remoteSeaProbe.dto;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.mapstruct.Builder;
 
 import java.time.LocalDateTime;
 
