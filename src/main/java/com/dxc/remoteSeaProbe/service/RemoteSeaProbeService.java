@@ -1,6 +1,7 @@
 package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.ProbeResponse;
+import com.dxc.remoteSeaProbe.mapper.RemoteSeaProbeMapper;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
 import com.dxc.remoteSeaProbe.dto.CreateProbeRequest;
 import com.dxc.remoteSeaProbe.persistence.repo.RemoteSeaProbeRepository;
@@ -12,16 +13,20 @@ public class RemoteSeaProbeService {
 
     private final RemoteSeaProbeRepository probeRepository;
 
-    public RemoteSeaProbeService(RemoteSeaProbeRepository probeRepository) {
+    private final RemoteSeaProbeMapper mapper;
+
+    public RemoteSeaProbeService(RemoteSeaProbeRepository probeRepository, RemoteSeaProbeMapper mapper) {
         this.probeRepository = probeRepository;
+        this.mapper = mapper;
     }
 
     public ProbeResponse createProbe(CreateProbeRequest request) {
-        RemoteSeaProbe probe = new RemoteSeaProbe();
+        RemoteSeaProbe probe = mapper.toEntity(request);
+        /*RemoteSeaProbe probe = new RemoteSeaProbe();
         probe.setName(request.getName());
         probe.setInitialLatitude(request.getInitialLatitude());
         probe.setInitialLongitude(request.getInitialLongitude());
-        probe.setDirectionFacing(request.getDirectionFacing());
+        probe.setDirectionFacing(request.getDirectionFacing());*/
         probe.setCreatedAt(LocalDateTime.now());
 
         RemoteSeaProbe saved = probeRepository.save(probe);
@@ -37,14 +42,15 @@ public class RemoteSeaProbeService {
     }
 
     private ProbeResponse toResponse(RemoteSeaProbe entity) {
-        return new ProbeResponse(
+        return mapper.toResponse(entity);
+/*        return new ProbeResponse(
                 entity.getId(),
                 entity.getName(),
                 entity.getInitialLatitude(),
                 entity.getInitialLongitude(),
                 entity.getDirectionFacing(),
                 entity.getCreatedAt()
-        );
+        );*/
     }
 }
 

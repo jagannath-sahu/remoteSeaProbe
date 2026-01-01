@@ -3,17 +3,11 @@ correct solution depends on WHAT you are initializing.
 Examples:
 
 Load cache from DB
-
 Warm up Redis
-
 Call another service
-
 Validate configuration
-
 Create background tasks
-
 Run one-time migration logic
-
 Schedule periodic jobs
 
 Option 4: ApplicationReadyEvent ⭐ (PRODUCTION-GRADE)

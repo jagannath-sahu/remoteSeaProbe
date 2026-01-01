@@ -2,6 +2,7 @@ package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.CreateProbeRequest;
 import com.dxc.remoteSeaProbe.dto.ProbeResponse;
+import com.dxc.remoteSeaProbe.mapper.RemoteSeaProbeMapper;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
 import com.dxc.remoteSeaProbe.persistence.repo.RemoteSeaProbeRepository;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,9 @@ class RemoteSeaProbeServiceTest {
 
     @Mock
     private RemoteSeaProbeRepository probeRepository;
+
+    @Mock
+    private RemoteSeaProbeMapper mapper;
 
     @InjectMocks
     private RemoteSeaProbeService probeService;
@@ -44,6 +48,19 @@ class RemoteSeaProbeServiceTest {
 
         when(probeRepository.save(any(RemoteSeaProbe.class)))
                 .thenReturn(savedProbe);
+
+        when(mapper.toEntity(any(CreateProbeRequest.class)))
+                .thenReturn(savedProbe);
+
+        ProbeResponse probeResponse = new ProbeResponse(1L,
+                "Probe-1",
+                (long) 12.5,
+                (long) 77.6,
+                "NORTH",
+                LocalDateTime.now());
+
+        when(mapper.toResponse(any(RemoteSeaProbe.class)))
+                .thenReturn(probeResponse);
 
         // when
         ProbeResponse response = probeService.createProbe(request);
