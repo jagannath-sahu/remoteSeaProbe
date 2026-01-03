@@ -2,6 +2,26 @@ spring:
   application:
     name: remoteSeaProbe
 
+  kafka:
+    bootstrap-servers: localhost:19092
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      properties:
+        linger.ms: 5
+
+    consumer:
+      group-id: remote-sea-probe-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    listener:
+      ack-mode: manual
   datasource:
     # Embedded DB disabled – using Postgres via Docker Compose
     url: jdbc:postgresql://localhost:5432/aionar
