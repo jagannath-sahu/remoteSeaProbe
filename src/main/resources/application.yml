@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: remoteSeaProbe
+
+  datasource:
+    # Embedded DB disabled – using Postgres via Docker Compose
+    url: jdbc:postgresql://localhost:5432/aionar
+    username: local
+    password: password123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: beans,conditions
+  endpoint:
+    conditions:
+      enabled: true
+
+probe:
+  enabled: true
+  endpoint: http://remote-sea-probe
+
+logging:
+  level:
+    root: INFO

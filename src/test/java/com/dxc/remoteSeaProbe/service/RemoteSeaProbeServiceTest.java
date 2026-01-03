@@ -46,11 +46,9 @@ class RemoteSeaProbeServiceTest {
         savedProbe.setDirectionFacing("NORTH");
         savedProbe.setCreatedAt(LocalDateTime.now());
 
-        when(probeRepository.save(any(RemoteSeaProbe.class)))
-                .thenReturn(savedProbe);
+        when(probeRepository.save(any(RemoteSeaProbe.class))).thenReturn(savedProbe);
 
-        when(mapper.toEntity(any(CreateProbeRequest.class)))
-                .thenReturn(savedProbe);
+        when(mapper.toEntity(any(CreateProbeRequest.class))).thenReturn(savedProbe);
 
         ProbeResponse probeResponse = new ProbeResponse(1L,
                 "Probe-1",
@@ -59,8 +57,7 @@ class RemoteSeaProbeServiceTest {
                 "NORTH",
                 LocalDateTime.now());
 
-        when(mapper.toResponse(any(RemoteSeaProbe.class)))
-                .thenReturn(probeResponse);
+        when(mapper.toResponse(any(RemoteSeaProbe.class))).thenReturn(probeResponse);
 
         // when
         ProbeResponse response = probeService.createProbe(request);
@@ -75,8 +72,7 @@ class RemoteSeaProbeServiceTest {
     @Test
     void shouldThrowExceptionWhenProbeNotFound() {
         // given
-        when(probeRepository.findById(99L))
-                .thenReturn(Optional.empty());
+        when(probeRepository.findById(99L)).thenReturn(Optional.empty());
 
         // then
         IllegalArgumentException ex = assertThrows(

@@ -25,19 +25,16 @@ Rule of thumb:
 > If users of your code should “just add a dependency and it works”, you need auto-config.
 
 ---
-
 # 1️⃣ What auto-configuration REALLY is (mental model)
 
 Auto-configuration is just:
 
-```java
 @Configuration
 @Conditional(...)
 public class SomethingAutoConfiguration {
     @Bean
     ...
 }
-```
 
 Nothing magical.
 
@@ -48,7 +45,6 @@ Spring Boot:
 * Registers beans **only if conditions match**
 
 ---
-
 # 2️⃣ Let’s build a REAL auto-configuration (hands-on lab)
 
 We’ll create:
@@ -60,23 +56,15 @@ You’ll be able to:
 * Add dependency
 * Get bean automatically
 * Override it
-* See it in `/actuator/beans`
-
+* See it in /actuator/beans
 ---
-
 ## Step 1️⃣ Create a new package (IMPORTANT separation)
 
-```text
 com.dxc.remoteSeaProbe.autoconfig
-```
 
 Never put auto-config in your normal `service` package.
 
----
-
 ## Step 2️⃣ Create a simple service (library-style)
-
-```java
 package com.dxc.remoteSeaProbe.core;
 
 public class ProbeClient {
@@ -91,16 +79,11 @@ public class ProbeClient {
         return "Pinging " + endpoint;
     }
 }
-```
 
 No Spring annotations here ❌
 This simulates a **real library class**.
-
 ---
-
 ## Step 3️⃣ Create configuration properties (VERY IMPORTANT)
-
-```java
 package com.dxc.remoteSeaProbe.autoconfig;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -118,17 +101,13 @@ public class ProbeProperties {
         this.endpoint = endpoint;
     }
 }
-```
 
 ✔ Externalized config
 ✔ IDE autocomplete
 ✔ Type-safe
 
 ---
-
 ## Step 4️⃣ Create the Auto-Configuration class
-
-```java
 package com.dxc.remoteSeaProbe.autoconfig;
 
 import com.dxc.remoteSeaProbe.core.ProbeClient;
@@ -149,7 +128,6 @@ public class ProbeAutoConfiguration {
         return new ProbeClient(properties.getEndpoint());
     }
 }
-```
 
 ### Read this CAREFULLY:
 
@@ -159,23 +137,15 @@ public class ProbeAutoConfiguration {
 
 This is **exactly how Spring Boot does it**.
 
----
-
 # 5️⃣ Register auto-configuration (THIS IS CRITICAL)
 
 ### Spring Boot 3.x+
 
 Create file:
-
-```text
 src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-```
 
 Add:
-
-```text
 com.dxc.remoteSeaProbe.autoconfig.ProbeAutoConfiguration
-```
 
 ⚠️ Without this file, auto-config WILL NOT load.
 
@@ -184,18 +154,13 @@ com.dxc.remoteSeaProbe.autoconfig.ProbeAutoConfiguration
 # 6️⃣ Test it in your SAME project (local lab)
 
 ### application-local.yml
-
-```yaml
 probe:
   enabled: true
   endpoint: http://remote-sea-probe
-```
 
 ---
-
 ### Inject and test
 
-```java
 @Component
 @Profile("local")
 public class ProbeTestRunner implements CommandLineRunner {
@@ -211,36 +176,22 @@ public class ProbeTestRunner implements CommandLineRunner {
         System.out.println(probeClient.ping());
     }
 }
-```
 
 Expected output:
-
-```text
 Pinging http://remote-sea-probe
-```
 
 🎉 You just wrote real auto-configuration.
 
----
-
 # 7️⃣ Verify using Actuator (DO THIS)
-
-```bash
 /actuator/beans
-```
 
 Search for:
 
-```text
 probeClient
 ProbeAutoConfiguration
-```
 
 And:
-
-```bash
 /actuator/conditions
-```
 
 You’ll see:
 
@@ -248,12 +199,10 @@ You’ll see:
 * Which condition enabled it
 
 ---
-
 # 8️⃣ Test override behavior (IMPORTANT)
 
 ### User defines own bean:
 
-```java
 @Configuration
 public class CustomProbeConfig {
 
@@ -262,7 +211,6 @@ public class CustomProbeConfig {
         return new ProbeClient("custom-endpoint");
     }
 }
-```
 
 Result:
 
@@ -272,7 +220,6 @@ Result:
 ✔ This is **mandatory for good starters**
 
 ---
-
 # 9️⃣ When auto-configuration surprises people
 
 Common causes:
@@ -285,19 +232,18 @@ Common causes:
 This is why `/actuator/conditions` exists.
 
 ---
-
 # 🔟 Interview-level explanation
 
 **Q:** Why use auto-configuration instead of normal `@Configuration`?
 
 **A:**
 
-> Auto-configuration allows conditional, opt-in bean creation based on classpath, properties, and existing beans, enabling libraries to integrate seamlessly without explicit configuration.
+> Auto-configuration allows conditional, opt-in bean creation based on classpath,
+properties, and existing beans, enabling libraries to integrate seamlessly without explicit
+configuration.
 
 ---
-
 # 🔥 Golden rules (WRITE THESE)
-
 1. Auto-config lives in **separate package/module**
 2. Always allow override (`@ConditionalOnMissingBean`)
 3. Always provide properties
@@ -305,7 +251,6 @@ This is why `/actuator/conditions` exists.
 5. Always verify with Actuator
 
 ---
-
 # Next things (high value)
 
 If you want, next we can:
@@ -315,5 +260,3 @@ If you want, next we can:
 * Add tests using `ApplicationContextRunner`
 * Debug auto-config order
 * Write failure analyzer
-
-Just tell me 👍

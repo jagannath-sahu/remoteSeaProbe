@@ -1,0 +1,17 @@
+Disabling Auto-Configuration Classes:
+-------------------------------------------
+Let’s say we want to exclude the auto-configuration from loading.
+
+We could add the @EnableAutoConfiguration annotation with exclude or excludeName
+attribute to a configuration class:
+
+@Configuration
+@EnableAutoConfiguration(exclude={MySQLAutoconfiguration.class})
+public class AutoconfigurationApplication {
+    //...
+}
+
+We can also set the spring.autoconfigure.exclude property:
+
+spring.autoconfigure.exclude=com.baeldung.autoconfiguration.MySQLAutoconfiguration
+Copy

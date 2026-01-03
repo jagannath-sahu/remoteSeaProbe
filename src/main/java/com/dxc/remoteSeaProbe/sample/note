@@ -1,0 +1,10 @@
+@Bean is a method-level annotation.
+
+@Bean annotation specifies that a method produces a return value registered as a bean ( data )
+with BeanFactory - managed by Spring Container.
+
+java program uses @Configuration annotation specify that the class
+contains one or more @Bean annotations which help to automatically register (initialize) in
+the Spring Container (Spring Application Context).
+
+@Configuration is a class-level annotation.

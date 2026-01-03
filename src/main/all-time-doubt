@@ -1,0 +1,255 @@
+This confusion is **very normal**, and honestly many interviewers themselves mix concepts 😄
+Let me clear it **end-to-end**, with **strong opinions**, real-world reasoning,
+and **no hand-waving**.
+
+---
+
+## 1️⃣ First: what `<packaging>` really means (Maven truth)
+
+In Maven, `<packaging>` decides **what artifact Maven produces** after build.
+
+| Packaging       | Output      | Meaning                    |
+| --------------- | ----------- | -------------------------- |
+| `jar` (default) | `myapp.jar` | Plain Java archive         |
+| `war`           | `myapp.war` | Web Application Archive    |
+| not specified   | **jar**     | Because jar is the default |
+
+👉 **Important**
+If **no `<packaging>` tag is present**, it is **jar**.
+
+So in your project:
+
+* 4 services → `<packaging>war</packaging>`
+* 1 service → no `<packaging>` → **jar**
+
+That is not accidental. It’s architectural.
+
+---
+
+## 2️⃣ Why Jakarta REST projects historically used WAR (very important context)
+
+Your project is **Jakarta REST (JAX-RS)**, not Spring Boot originally.
+
+### Traditional Java EE / Jakarta EE model:
+
+* Application server exists already (Tomcat / JBoss / WebLogic / WebSphere)
+* Server provides:
+
+  * Servlet container
+  * JAX-RS runtime
+  * Security
+  * JNDI
+* You deploy your app **into** that server
+
+📦 So you deploy as:
+
+```
+my-service.war → drop into /webapps
+```
+
+### That is WHY:
+
+👉 **WAR was the default and preferred packaging**
+
+Because:
+
+* Server already exists
+* Multiple apps run in same server
+* Ops team controls server
+* App should NOT bundle server
+
+This is **100% normal in enterprise projects**.
+
+---
+
+## 3️⃣ Why some services are WAR and one is JAR in the same project?
+
+This is the key confusion.
+
+### Very common pattern in real systems 👇
+
+| Service type                | Packaging | Reason                 |
+| --------------------------- | --------- | ---------------------- |
+| REST APIs                   | WAR       | Need servlet container |
+| Admin UI / legacy service   | WAR       | Browser-based          |
+| Batch job / scheduler       | JAR       | No web layer           |
+| Kafka consumer              | JAR       | Background process     |
+| Migration / utility service | JAR       | CLI / cron             |
+
+💡 So that **one service without `<packaging>`** is most likely:
+
+* Not exposed as HTTP
+* Or runs as a background job
+* Or uses `main()` method
+
+That’s why it doesn’t need WAR.
+
+---
+
+## 4️⃣ Now comes Spring Boot – where confusion starts
+
+### Spring Boot changed the game completely.
+
+Before Spring Boot:
+
+```
+Code → WAR → External Tomcat → Deploy
+```
+
+With Spring Boot:
+
+```
+Code + Embedded Tomcat → JAR → Run
+```
+
+### Spring Boot JAR is NOT a normal JAR
+
+This is the **most misunderstood thing**.
+
+A Spring Boot JAR contains:
+
+* Your application code
+* Embedded Tomcat / Jetty / Undertow
+* Spring MVC / REST
+* Everything needed to run
+
+So this command:
+
+```bash
+java -jar myapp.jar
+```
+
+👉 **Starts a web server**
+👉 **Exposes REST endpoints**
+👉 **Behaves exactly like a WAR**
+
+That’s why:
+
+> “How is it a web app if it is not a WAR?”
+
+Answer:
+
+> Because the **server is inside the JAR**
+
+---
+
+## 5️⃣ WAR vs JAR – clear comparison (interview ready)
+
+### WAR (Traditional / Jakarta style)
+
+✅ Pros:
+
+* Centralized server management
+* Ops team controls Tomcat
+* Multiple apps in one server
+* Useful in legacy enterprises
+
+❌ Cons:
+
+* Deployment is slower
+* Tight coupling to server
+* Harder in cloud/Kubernetes
+
+Used when:
+
+* Legacy Java EE / Jakarta EE
+* Corporate app servers
+* Strict infra rules
+
+---
+
+### Spring Boot JAR (Modern approach)
+
+✅ Pros:
+
+* Self-contained
+* Easy CI/CD
+* Perfect for Docker & Kubernetes
+* Version isolation per service
+
+❌ Cons:
+
+* Each service runs its own server
+* Slightly more memory usage
+
+Used when:
+
+* Microservices
+* Cloud / Kubernetes
+* Independent deployments
+
+👉 **My opinion**:
+**JAR is superior for microservices. WAR is legacy-heavy.**
+
+---
+
+## 6️⃣ Can Spring Boot create WAR also? YES (this confuses interviewers)
+
+Spring Boot supports **both**.
+
+### Spring Boot WAR:
+
+* You disable embedded Tomcat
+* Deploy to external Tomcat
+* Extend `SpringBootServletInitializer`
+
+Used when:
+
+* Company already has Tomcat infra
+* Migration from old WAR system
+
+But honestly?
+
+> 🚫 New projects should NOT do this unless forced
+
+---
+
+## 7️⃣ Why your Jakarta project still prefers WAR
+
+Because:
+
+* It is **not Spring Boot**
+* It likely runs on:
+
+  * Tomcat
+  * JBoss
+  * WebSphere
+* The server provides JAX-RS runtime
+
+So WAR is the **correct choice there**.
+
+---
+
+## 8️⃣ Simple mental model (remember this forever)
+
+### Ask ONE question:
+
+> **Who owns the server?**
+
+| Owner               | Packaging         |
+| ------------------- | ----------------- |
+| External app server | WAR               |
+| Application itself  | JAR (Spring Boot) |
+
+That’s it. No confusion anymore.
+
+---
+
+## 9️⃣ How to answer confidently in interview (copy this mindset)
+
+> “Traditionally, Jakarta EE applications are packaged as WAR and deployed to an external
+servlet container. Spring Boot changed this model by embedding the servlet container inside a JAR,
+making the application self-contained. Both are web applications;
+the difference is where the server lives.”
+
+That answer alone shuts down 90% of confusion.
+
+---
+
+If you want, next we can:
+
+* Inspect one of your WAR services and explain **exactly** how it is started
+* Convert a WAR-based Jakarta REST app into Spring Boot JAR
+* Explain how Kubernetes treats WAR vs JAR (important)
+
+Just tell me 👍
