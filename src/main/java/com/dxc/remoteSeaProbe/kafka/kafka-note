@@ -1,0 +1,21 @@
+Next logical practice steps (I recommend this order)
+
+Add DLQ consumer
+
+Add retry topic (instead of same topic retry)
+
+Pause/resume listener
+
+Exactly-once semantics discussion
+
+Kafka Streams (only basics)
+
+Implement JSON event
+
+One powerful mental model (remember this)
+------------------------------------------------
+application.yaml = defaults
+Java config = specialization
+
+Once you get this, Kafka becomes simple.
+
