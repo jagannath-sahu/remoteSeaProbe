@@ -27,7 +27,7 @@ public class SecurityMatchEvent {
     private String eventType;
 
     @JsonProperty("payload_hash")
-    private String payloadHash;
+    private String payloadHash; //payload_hash → duplicate detection
 
     @JsonProperty("created_at")
     private Instant createdAt;

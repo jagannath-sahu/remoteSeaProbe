@@ -18,4 +18,420 @@ application.yaml = defaults
 Java config = specialization
 
 Once you get this, Kafka becomes simple.
+--------------
+DLQ consumer + replay strategy
+---------------------------------------------------
+download kafka:
+------------------
+wget https://archive.apache.org/dist/kafka/3.7.0/kafka_2.13-3.7.0.tgz
+tar -xzf kafka_2.13-3.7.0.tgz
+cd kafka_2.13-3.7.0
+Start Kafka (KRaft mode – no Zookeeper)-only once at begining
+bin/kafka-storage.sh format \
+  -t $(bin/kafka-storage.sh random-uuid) \
+  -c config/kraft/server.properties
+
+You’re running Kafka in KRaft mode (no Zookeeper).
+
+Which port is Kafka running on RIGHT NOW?
+grep -E "listeners|advertised.listeners|node.id" config/kraft/server.properties
+
+/home/jagannath/tli/kafka/kafka_2.13-3.7.0
+
+change port:
+------------
+cd /home/jagannath/tli/kafka/kafka_2.13-3.7.0
+vi config/kraft/server.properties
+//change port to 19092
+listeners=PLAINTEXT://:19092
+advertised.listeners=PLAINTEXT://localhost:19092
+
+cd /home/jagannath/tli/kafka/kafka_2.13-3.7.0
+Start Kafka:
+bin/kafka-server-start.sh config/kraft/server.properties
+
+Stop Kafka:
+ctrl+c
+lsof -i: 19092
+kill -9 <pid>
+
+---------------------
+bin/kafka-topics.sh --bootstrap-server localhost:19092 --list
+jagannath@JSAHU-NB:~/tli/kafka/kafka_2.13-3.7.0$ bin/kafka-topics.sh --bootstrap-server localhost:19092 --list
+__consumer_offsets
+demo-topic
+demo-topic-v2
+--------------------
+
+Create topic:
+-------------
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:19092 \
+  --create \
+  --topic demo-topic \
+  --partitions 3 \
+  --replication-factor 1
+
+describe topic:
+----------------
+bin/kafka-topics.sh \
+  --bootstrap-server localhost:19092 \
+  --describe \
+  --topic demo-topic
+
+Verify consumer group exists / is active:
+-----------------------------------------
+this you can verify only after running the spring boot application.
+A consumer group is created only when your Spring Kafka listener starts successfully and polls
+
+bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:19092 \
+  --list
+
+jagannath@JSAHU-NB:~/tli/kafka/kafka_2.13-3.7.0$ bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:19092 \
+  --list
+remote-sea-probe-group
+
+If LAG = 0 and no active consumer → your listener isn’t starting.
+
+Kafka does NOT create a consumer group until:
+A consumer actually starts
+It subscribes to a topic
+It polls Kafka at least once
+
+So the lifecycle is:
+Spring app starts
+→ @KafkaListener container starts
+→ Consumer connects to Kafka
+→ Consumer polls
+→ Kafka creates the consumer group
+→ Offsets topic (__consumer_offsets) updated
+
+Very important consequences
+---------------------------
+Scenario then What happens
+You call ack.acknowledge()	then Offset committed ✅
+You forget to call ack	then Message reprocessed again and again 🔁
+Exception thrown before ack	Message not committed ❌
+App crashes before ack	Message replayed after restart
+
+Just don’t forget ack.acknowledge()
+
+Topic naming (what you remembered is correct)
+--------------------------------------------------
+Use domain-driven, dotted names:
+
+posdaas.security-match.event
+posdaas.security-match.retry
+posdaas.security-match.dlq
+
+My opinion (strong):
+Avoid generic names like test-topic
+Topic name should answer:
+Who owns it
+What happened
+Is it business or error
+
+Producer & Consumer Configs You SHOULD Know:
+---------------------------------------------
+Producer (must know):
+acks: all
+linger.ms: 5
+batch.size: 16384
+enable.idempotence: true
+
+Consumer (must know):
+enable-auto-commit: false
+max-poll-records: 100
+session-timeout-ms: 15000
+max-poll-interval-ms: 300000
+
+--------------
+Storing a hash (or eventId) and checking before processing is still widely used and absolutely acceptable today.
+
+Kafka Idempotent Producer (Producer-side dedup):
+--------------------------------------------------
+spring.kafka.producer.properties.enable.idempotence: true
+
+Event ID based Idempotency (Better than hash)
+---------------------------------------------
+Instead of hash, use:
+{
+  "event_id": "uuid",
+  "business_key": "SEC-123"
+}
+
+Store event_id in DB
+event_id VARCHAR PRIMARY KEY
+
+Why better than hash
+No collision risk
+Easier debugging
+Cleaner semantics
+My recommendation
+👉 Event ID > Hash
+Hash only when payload is large or external.
+
+How do you handle duplicate Kafka events?
+Kafka guarantees at-least-once delivery, so I implement idempotent consumers using event IDs
+or hashes stored in a fast store like Redis or enforced by DB constraints.
+Kafka-level exactly-once is rarely sufficient when external systems are involved.
+
+note:
+Serializer and deserializer must be compatible across producer & consumer.
+
+Create a NEW topic for JSON events
+Example:
+demo-topic-v1   → String
+demo-topic-v2   → JSON
+
+changing serializer breaks the message contract.
+We usually introduce new topics or dual producers during migration.
+
+application.yaml defines defaults only.
+Per-topic / per-use-case serializers are handled via multiple ProducerFactory + KafkaTemplate beans.
+
+----------------
+NOTE:
+One powerful mental model (remember this)
+
+application.yaml = defaults
+Java config = specialization
+
+Once you get this, Kafka becomes simple.
+-------------------
+Why your app broke after adding JSON config
+What you had before
+Spring Boot auto-configured this for you:
+
+KafkaTemplate<String, String>   // auto-created
+
+So this worked:
+
+public DemoProducer(KafkaTemplate<String, String> kafkaTemplate)
+
+What you added now
+
+You manually created:
+
+@Bean
+KafkaTemplate<String, Object> jsonKafkaTemplate
+
+
+But you accidentally disabled auto-configuration of the default KafkaTemplate<String, String>.
+
+Why?
+
+Because Spring Boot auto-config creates KafkaTemplate only if NONE already exists.
+
+Once Spring sees any KafkaTemplate bean, it stops creating the default one.
+
+Result:
+❌ No KafkaTemplate<String, String>
+❌ DemoProducer fails
+
+🧠 Important Spring rule (remember this forever)
+
+Spring Boot auto-config backs off when you define your own beans
+
+This is intentional.
+
+FIX #1 (BEST PRACTICE – RECOMMENDED)
+----------------------------------------
+👉 Explicitly define BOTH templates
+👉 Name them
+👉 Use constructor injection with qualifiers
+
+Define String KafkaTemplate manually
+@Configuration
+public class KafkaStringProducerConfig {
+
+    @Bean
+    public ProducerFactory<String, String> stringProducerFactory(
+            KafkaProperties kafkaProperties) {
+        return new DefaultKafkaProducerFactory<>(
+                kafkaProperties.buildProducerProperties());
+    }
+
+    @Bean
+    public KafkaTemplate<String, String> stringKafkaTemplate(
+            ProducerFactory<String, String> stringProducerFactory) {
+        return new KafkaTemplate<>(stringProducerFactory);
+    }
+}
+
+Fix your producers explicitly:
+String producer
+
+@Service
+public class DemoProducer {
+
+    private final KafkaTemplate<String, String> kafkaTemplate;
+
+    public DemoProducer(
+        @Qualifier("stringKafkaTemplate")
+        KafkaTemplate<String, String> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+}
+
+JSON producer
+@Service
+public class JsonProducer {
+
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public JsonProducer(
+        @Qualifier("jsonKafkaTemplate")
+        KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+    }
+}
+
+Kafka guarantee is:
+At-least-once delivery
+So duplicates are expected, not bugs.
+
+------------------------------
+Consumer group offset reset (possible but less likely here)
+
+If you used:
+auto-offset-reset: earliest
+And changed:
+consumer group id
+deleted local offsets
+started fresh group
+Kafka will replay existing messages.
+But again — your event IDs are different, so this is not replay.
+---------------------------------
+Important Kafka Truth (remember this forever)
+
+Kafka does NOT guarantee exactly-once consumption
+Your application MUST be idempotent
+This is why your hash / eventId design is GOOD
+---------------------------------------
+
+What to do now (best practice)
+------------------------------
+Accept duplicates as NORMAL
+Do NOT try to “fix Kafka”.
+
+Kafka duplicates are:
+restarts
+retries
+rebalances
+failures
+
+All normal.
+---------------------------------
+Manual ACK should be AFTER processing:
+@KafkaListener(...)
+public void listen(SecurityMatchEvent event, Acknowledgment ack) {
+    if (alreadyProcessed(event.getEventId())) {
+        ack.acknowledge();
+        return;
+    }
+
+    process(event);
+    ack.acknowledge();
+}
+--------------------------------
+One more IMPORTANT thing you might be missing
+If you enabled:
+
+retries: 3
+
+Producer retries can also create duplicates
+(unless idempotence enabled)
+
+To reduce this:
+
+properties:
+  enable.idempotence: true
+
+Still → consumer must handle duplicates.
+--------------------------------
+Final mental model (this is gold)
+
+Kafka delivers messages
+Kafka does NOT know your business logic
+Kafka will resend
+Kafka expects YOU to handle duplicates
+--------------------------------------
+i got this error remote: error: Trace: 0a78ac2187319dcb85d76897e2fa7174f8c2737861387836501a3af6b54373fa
+remote: error: See https://gh.io/lfs for more information.
+remote: error: File logs/app.log is 1124.23 MB;
+this exceeds GitHub's file size limit of 100.00 MB remote: error:
+GH001: Large files detected. You may want to try Git Large File Storage -
+https://git-lfs.github.com. To https://github.com/jagannath-sahu/remoteSeaProbe.git !
+[remote rejected] dev -> dev (pre-receive hook declined) error: failed to push
+some refs to 'https://github.com/jagannath-sahu/remoteSeaProbe.git' and
+i went to git deleted and take pull now 0 size but still its saying same error and not allowing to push
+
+solution:
+
+OPTION A (RECOMMENDED): Fresh clone → filter → push
+
+This is the industry-safe approach.
+
+STEP 1: Move out of current repo
+cd ..
+mv remoteSeaProbe remoteSeaProbe_backup
+
+STEP 2: Fresh clone
+git clone https://github.com/jagannath-sahu/remoteSeaProbe.git
+cd remoteSeaProbe
+
+⚠️ Do not run build, IDE, or app yet.
+
+STEP 3: Remove the file from history
+git filter-repo --path logs/app.log --invert-paths
+
+This time it will work ✅
+
+STEP 4: Add .gitignore (IMPORTANT)
+echo -e "logs/\n*.log" >> .gitignore
+git add .gitignore
+git commit -m "Ignore logs permanently"
+
+STEP 5: Force push
+git push origin dev --force
+
+🎉 DONE. GitHub will accept it.
+--------------------------------------------
+configure rolling policy:
+<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+    <fileNamePattern>logs/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+    <maxFileSize>10MB</maxFileSize>
+    <maxHistory>7</maxHistory>
+    <totalSizeCap>100MB</totalSizeCap>
+</rollingPolicy>
+---------------
+git remote add origin https://github.com/jagannath-sahu/remoteSeaProbe.git
+
+git push origin dev --force
+---------------------------------
+Step-by-step: Enable Lombok in IntelliJ IDEA
+Enable Annotation Processing (MOST IMPORTANT)
+
+IntelliJ → Settings (Ctrl + Alt + S)
+or File → Settings
+
+Go to:
+
+Build, Execution, Deployment
+ └── Compiler
+     └── Annotation Processors
+
+✔️ Check → Enable annotation processing
+
+Then select:
+
+🔘 Obtain processors from project classpath (recommended)
+-------------------
+install Lombok Plugin
+Settings → Plugins
+Search for Lombok
+----------------------
 

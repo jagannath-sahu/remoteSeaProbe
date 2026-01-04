@@ -7,6 +7,9 @@ spring:
 
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      #DEFAULT serializer Spring Boot will autoconfigure, if you need both string and json then you have to create configs
+      #beacuse by default autoconfiguration Spring Boot can auto-create only one default KafkaTemplate
+      #and Kafka itself does not know topics are String or JSON, we need both that is why we have created KafkaJsonProducerConfig
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
       retries: 3

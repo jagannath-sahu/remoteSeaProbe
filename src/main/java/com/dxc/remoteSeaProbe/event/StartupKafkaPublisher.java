@@ -26,7 +26,9 @@ public class StartupKafkaPublisher {
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         demoProducer.send("Kafka: Application started successfully");
-        jsonProducer.send(new SecurityMatchEvent(UUID.randomUUID().toString(), "security-1", "default", "default", "default", Instant.now()));
+        jsonProducer.send(new SecurityMatchEvent(UUID.randomUUID().toString(),
+                "security-1", "default",
+                "default", "default", Instant.now()));
     }
 }
 

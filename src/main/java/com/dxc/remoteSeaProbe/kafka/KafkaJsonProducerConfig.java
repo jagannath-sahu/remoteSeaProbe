@@ -15,8 +15,7 @@ import java.util.Map;
 public class KafkaJsonProducerConfig {
 
     @Bean
-    public ProducerFactory<String, Object> jsonProducerFactory(
-            KafkaProperties kafkaProperties) {
+    public ProducerFactory<String, Object> jsonProducerFactory(KafkaProperties kafkaProperties) {
 
         Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
 
@@ -28,9 +27,9 @@ public class KafkaJsonProducerConfig {
         return new DefaultKafkaProducerFactory<>(props);
     }
 
+    //Custom KafkaTemplate<String, Object>
     @Bean
-    public KafkaTemplate<String, Object> jsonKafkaTemplate(
-            ProducerFactory<String, Object> jsonProducerFactory) {
+    public KafkaTemplate<String, Object> jsonKafkaTemplate(ProducerFactory<String, Object> jsonProducerFactory) {
         return new KafkaTemplate<>(jsonProducerFactory);
     }
 }

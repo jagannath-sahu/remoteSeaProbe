@@ -15,8 +15,7 @@ import java.util.Map;
 public class KafkaJsonConsumerConfig {
 
     @Bean
-    public ConsumerFactory<String, Object> jsonConsumerFactory(
-            KafkaProperties kafkaProperties) {
+    public ConsumerFactory<String, Object> jsonConsumerFactory(KafkaProperties kafkaProperties) {
 
         Map<String, Object> props = new HashMap<>(kafkaProperties.buildConsumerProperties());
 
@@ -33,8 +32,7 @@ public class KafkaJsonConsumerConfig {
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object>
-    jsonKafkaListenerContainerFactory(
+    public ConcurrentKafkaListenerContainerFactory<String, Object> jsonKafkaListenerContainerFactory(
             ConsumerFactory<String, Object> jsonConsumerFactory) {
 
         ConcurrentKafkaListenerContainerFactory<String, Object> factory =
