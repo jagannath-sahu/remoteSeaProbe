@@ -996,3 +996,41 @@ That answer is **senior-level**.
 🔥 Distributed transactions (Saga pattern)
 
 Say which one you want next 👍
+---------------------------------------
+What Spring Boot actually uses
+
+Spring does NOT define its own @PostConstruct.
+
+It relies on:
+
+Jakarta lifecycle annotations
+
+Implemented internally via CommonAnnotationBeanPostProcessor
+
+So when Spring sees:
+
+@PostConstruct
+public void init() { }
+
+
+It:
+
+Creates the bean
+
+Injects dependencies
+
+Calls @PostConstruct
+
+Applies proxies (AOP, transactions, etc.)
+------------------------------------------------------
+New world (Jakarta EE → Spring Boot 3.x)
+
+Java EE was renamed to Jakarta EE.
+
+So:
+
+javax.* → ❌ deprecated / removed
+
+jakarta.* → ✅ current
+
+Spring Boot 3.x+ is fully Jakarta-based.

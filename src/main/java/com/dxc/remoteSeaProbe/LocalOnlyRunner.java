@@ -1,6 +1,6 @@
 package com.dxc.remoteSeaProbe;
 
-import com.dxc.remoteSeaProbe.test.SingletonService;
+import com.dxc.remoteSeaProbe.sample.SingletonService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;

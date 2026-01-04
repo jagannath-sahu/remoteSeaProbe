@@ -1,9 +1,7 @@
 package com.dxc.remoteSeaProbe.service;
 
-import com.dxc.remoteSeaProbe.dto.MovementDirection;
-import com.dxc.remoteSeaProbe.dto.MovementRequest;
-import com.dxc.remoteSeaProbe.dto.ProbeResponse;
-import com.dxc.remoteSeaProbe.dto.TravelHistoryResponse;
+import com.dxc.remoteSeaProbe.dto.*;
+import com.dxc.remoteSeaProbe.mapper.RemoteSeaProbeMapper;
 import com.dxc.remoteSeaProbe.persistence.entity.ProbeTravelHistory;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
 import com.dxc.remoteSeaProbe.persistence.repo.ProbeTravelHistoryRepository;
@@ -21,40 +19,46 @@ public class ProbeTravelHistoryService {
 
     private final RemoteSeaProbeService remoteSeaProbeService;
 
-    public ProbeTravelHistoryService(ProbeTravelHistoryRepository historyRepository, RemoteSeaProbeService remoteSeaProbeService) {
+    private final RemoteSeaProbeMapper mapper;
+
+    public ProbeTravelHistoryService(ProbeTravelHistoryRepository historyRepository, RemoteSeaProbeService remoteSeaProbeService, RemoteSeaProbeMapper mapper) {
         this.historyRepository = historyRepository;
         this.remoteSeaProbeService = remoteSeaProbeService;
+        this.mapper = mapper;
     }
 
     @Transactional
     public TravelHistoryResponse moveProbe(MovementRequest request) {
 
-        var probe = remoteSeaProbeService.getProbe(request.getProbeId());
+        // 1. Load managed entity
+        RemoteSeaProbe probe = remoteSeaProbeService.getProbeEntity(request.getProbeId());
 
-        MovementDirection direction = MovementDirection.fromString(request.getAction());
+        // 2. Resolve direction
+        MovementDirection direction =
+                MovementDirection.fromString(request.getAction());
 
-        var newPosition = direction.move(probe);
+        // 3. Calculate new position
+        var newPosition = direction.move(mapper.toResponse(probe));
+
+        // 4. Create history entry
+        ProbeTravelHistory history =
+                createHistory(probe, direction, newPosition);
+
+        // 5. Save & return
+        return toResponse(historyRepository.save(history));
+    }
+
+    private ProbeTravelHistory createHistory(RemoteSeaProbe probe,
+                                             MovementDirection direction,
+                                             Coordinates newPosition) {
 
         ProbeTravelHistory history = new ProbeTravelHistory();
+        history.setProbe(probe); // 🔥 managed entity
         history.setAction(direction);
         history.setLatitude(newPosition.latitude());
         history.setLongitude(newPosition.longitude());
-        RemoteSeaProbe remoteSeaProbe = new RemoteSeaProbe();
-        setRemoteSeaProbe(remoteSeaProbe, probe);
-        history.setProbe(remoteSeaProbe);
         history.setCreatedAt(LocalDateTime.now());
-        ProbeTravelHistory saved = historyRepository.save(history);
-
-        return toResponse(saved);
-    }
-
-    private static void setRemoteSeaProbe(RemoteSeaProbe remoteSeaProbe, ProbeResponse probe) {
-        remoteSeaProbe.setId(probe.getId());
-        remoteSeaProbe.setName(probe.getName());
-        remoteSeaProbe.setCreatedAt(probe.getCreatedAt());
-        remoteSeaProbe.setInitialLongitude(probe.getLongitude());
-        remoteSeaProbe.setInitialLatitude(probe.getLatitude());
-        remoteSeaProbe.setDirectionFacing(probe.getDirectionFacing());
+        return history;
     }
 
     public List<TravelHistoryResponse> getFullHistory(Long probeId) {
@@ -70,14 +74,14 @@ public class ProbeTravelHistoryService {
                 .orElse(null);
     }
 
-    private TravelHistoryResponse toResponse(ProbeTravelHistory e) {
+    private TravelHistoryResponse toResponse(ProbeTravelHistory probeTravelHistory) {
         return new TravelHistoryResponse(
-                e.getId(),
-                e.getProbe().getId(),
-                e.getAction().name(),
-                e.getLatitude(),
-                e.getLongitude(),
-                e.getCreatedAt()
+                probeTravelHistory.getId(),
+                probeTravelHistory.getProbe().getId(),
+                probeTravelHistory.getAction().name(),
+                probeTravelHistory.getLatitude(),
+                probeTravelHistory.getLongitude(),
+                probeTravelHistory.getCreatedAt()
         );
     }
 }

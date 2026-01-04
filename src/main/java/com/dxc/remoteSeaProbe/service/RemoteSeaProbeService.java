@@ -1,9 +1,11 @@
 package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.ProbeResponse;
+import com.dxc.remoteSeaProbe.mapper.RemoteSeaProbeMapper;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
 import com.dxc.remoteSeaProbe.dto.CreateProbeRequest;
 import com.dxc.remoteSeaProbe.persistence.repo.RemoteSeaProbeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
@@ -12,20 +14,17 @@ public class RemoteSeaProbeService {
 
     private final RemoteSeaProbeRepository probeRepository;
 
-    public RemoteSeaProbeService(RemoteSeaProbeRepository probeRepository) {
+    private final RemoteSeaProbeMapper mapper;
+
+    public RemoteSeaProbeService(RemoteSeaProbeRepository probeRepository, RemoteSeaProbeMapper mapper) {
         this.probeRepository = probeRepository;
+        this.mapper = mapper;
     }
 
     public ProbeResponse createProbe(CreateProbeRequest request) {
-        RemoteSeaProbe probe = new RemoteSeaProbe();
-        probe.setName(request.getName());
-        probe.setInitialLatitude(request.getInitialLatitude());
-        probe.setInitialLongitude(request.getInitialLongitude());
-        probe.setDirectionFacing(request.getDirectionFacing());
+        RemoteSeaProbe probe = mapper.toEntity(request);
         probe.setCreatedAt(LocalDateTime.now());
-
         RemoteSeaProbe saved = probeRepository.save(probe);
-
         return toResponse(saved);
     }
 
@@ -36,15 +35,13 @@ public class RemoteSeaProbeService {
         return toResponse(probe);
     }
 
+    public RemoteSeaProbe getProbeEntity(Long probeId) {
+        return probeRepository.findById(probeId)
+                .orElseThrow(() -> new EntityNotFoundException("Probe not found"));
+    }
+
     private ProbeResponse toResponse(RemoteSeaProbe entity) {
-        return new ProbeResponse(
-                entity.getId(),
-                entity.getName(),
-                entity.getInitialLatitude(),
-                entity.getInitialLongitude(),
-                entity.getDirectionFacing(),
-                entity.getCreatedAt()
-        );
+        return mapper.toResponse(entity);
     }
 }
 

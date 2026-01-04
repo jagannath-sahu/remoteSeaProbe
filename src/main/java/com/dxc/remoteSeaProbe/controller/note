@@ -1,0 +1,53 @@
+In my current project, most update APIs are implemented using POST for simplicity and legacy reasons.
+However, I understand that PUT is meant for full resource replacement and PATCH for partial updates,
+and I’ve designed PATCH-based APIs in POCs and personal projects.
+
+Why PUT / PATCH are missing in your project (REAL reasons)
+1️⃣ POST is abused for everything (most common)
+
+In many projects you’ll see:
+
+POST /updateUser
+POST /modifyProbe
+POST /saveOrUpdate
+
+Why teams do this:
+
+POST “just works”
+No strict semantics
+Easier to evolve
+Less discussion in reviews
+Most enterprise codebases:
+
+POST = do something
+PUT/PATCH require discipline. Many teams don’t bother.
+---------------------------------------------------------------------
+Correct way to configure CORS with Spring Security (BEST PRACTICE)
+✅ Preferred modern setup
+@Bean
+SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    http
+        .cors(Customizer.withDefaults())
+        .csrf(csrf -> csrf.disable())
+        .authorizeHttpRequests(auth -> auth
+            .anyRequest().authenticated()
+        );
+    return http.build();
+
+    And:
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("https://frontend.com"));
+        config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    Spring Security automatically registers CorsFilter BEFORE its chain.
