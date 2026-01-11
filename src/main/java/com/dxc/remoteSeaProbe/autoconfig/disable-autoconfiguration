@@ -14,4 +14,78 @@ public class AutoconfigurationApplication {
 We can also set the spring.autoconfigure.exclude property:
 
 spring.autoconfigure.exclude=com.baeldung.autoconfiguration.MySQLAutoconfiguration
-Copy
+------------------------
+Properties  → values
+Auto-config → wiring
+Runtime     → real effects
+------------------------
+What SpringApplication.run() ACTUALLY does
+ConfigurableApplicationContext context =
+    SpringApplication.run(RemoteSeaProbeApplication.class, args);
+
+Internally it:
+
+Creates the ApplicationContext
+
+Loads auto-configurations
+
+Scans components
+
+Creates beans
+
+Starts embedded Tomcat
+
+Starts background threads
+
+Returns control back to main
+
+✔ Yes, beans exist after this line
+❌ But main() is NOT a managed Spring bean
+-----------------------------------------------
+Q: What is @ConditionalOnSingleCandidate in Spring Boot?
+It ensures auto-configuration activates only when exactly one candidate bean of a required type exists.
+This prevents ambiguity, especially in cases like multiple DataSources,
+where Spring Boot refuses to guess and disables auto-config unless a primary is defined.
+---------------------
+@ConfigurationProperties  → config binding
+@ConditionalOnClass       → library present?
+@ConditionalOnBean        → dependency exists?
+@ConditionalOnSingleCandidate → no ambiguity?
+---------------------
+What it means in plain English
+
+“Enable Hibernate JPA auto-configuration ONLY IF exactly one DataSource bean exists.”
+
+Why?
+
+Because if Spring finds:
+
+0 DataSources → nothing to connect to
+
+2+ DataSources → ambiguity
+
+Spring Boot refuses to guess
+-------------------------------------------------
+spring.jpa-org.springframework.boot.jpa.autoconfigure.JpaProperties
+--------------------------------------------------
+How do you inspect JPA auto-configured beans?
+I don’t rely only on /actuator/beans.
+I use /actuator/conditions to understand which auto-configurations matched and why,
+then inspect specific infrastructure beans like entityManagerFactory, transactionManager,
+and repositories. For deep dives, I enable debug auto-config reports.
+------------------------------------------
+MUST-KNOW JPA Auto-Configs:
+
+DataSourceAutoConfiguration
+
+DataSourceTransactionManagerAutoConfiguration
+
+HibernateJpaAutoConfiguration
+
+JpaRepositoriesAutoConfiguration
+
+TransactionAutoConfiguration
+--------------------------------
+DataSourceAutoConfiguration matched:
+- @ConditionalOnClass found DataSource
+- @ConditionalOnProperty spring.datasource.url

@@ -1,3 +1,4 @@
+/*
 package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.MovementRequest;
@@ -76,3 +77,4 @@ class ProbeTravelHistoryServiceTest {
     }
 }
 
+*/

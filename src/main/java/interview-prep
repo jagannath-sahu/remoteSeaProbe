@@ -1,0 +1,217 @@
+🔥 **Rapid Mock Interview Mode ON**
+Rules followed: **one-line answers only**, **tricky scenarios**, **no mercy**, **interviewer-style**.
+Answer these **out loud** if possible — that’s how memory locks in.
+
+---
+
+## 🔥 Kafka (Tricky)
+
+**Q1:** Why Kafka consumer sees duplicate messages?
+**A:** At-least-once delivery with offset committed after processing.
+
+**Q2:** Can Kafka guarantee end-to-end exactly once?
+**A:** No, exactly-once is limited to Kafka internal processing.
+
+**Q3:** What happens if consumer crashes before committing offset?
+**A:** Message is reprocessed.
+
+**Q4:** How do you handle duplicate Kafka messages?
+**A:** Idempotent consumer logic.
+
+**Q5:** Why not always use exactly-once semantics?
+**A:** High complexity and performance overhead.
+
+---
+
+## 🔥 Spring Data JPA
+
+**Q6:** Why does N+1 problem happen?
+**A:** Lazy loading inside a loop triggers extra queries.
+
+**Q7:** Best way to fix N+1?
+**A:** JOIN FETCH or EntityGraph.
+
+**Q8:** Why is FetchType.EAGER dangerous?
+**A:** It loads unnecessary data and causes performance issues.
+
+**Q9:** Why LazyInitializationException occurs?
+**A:** Accessing lazy data outside transaction/session.
+
+**Q10:** Why OSIV is bad in production?
+**A:** Keeps DB connection open till controller/view.
+
+---
+
+## 🔥 @Transactional (Very Tricky)
+
+**Q11:** Why @Transactional not working on private method?
+**A:** Spring proxies intercept only public methods.
+
+**Q12:** Why @Transactional fails on internal method calls?
+**A:** Self-invocation bypasses proxy.
+
+**Q13:** Difference between REQUIRED and REQUIRES_NEW?
+**A:** REQUIRED joins existing transaction; REQUIRES_NEW creates a new one.
+
+**Q14:** When to use REQUIRES_NEW?
+**A:** Audit logs or failure isolation.
+
+**Q15:** Why @Transactional should be at service layer?
+**A:** Business boundary and proper proxy usage.
+
+---
+
+## 🔥 Microservices Design
+
+**Q16:** Biggest microservices mistake?
+**A:** Shared database across services.
+
+**Q17:** When microservices become distributed monolith?
+**A:** When services are tightly coupled and deployed together.
+
+**Q18:** Why REST everywhere is bad?
+**A:** Causes chatty synchronous communication.
+
+**Q19:** Why avoid synchronous chains?
+**A:** Leads to cascading failures.
+
+**Q20:** Why events preferred over REST internally?
+**A:** Loose coupling and better scalability.
+
+---
+
+## 🔥 Saga & Eventual Consistency
+
+**Q21:** Why Saga pattern is needed?
+**A:** Distributed transactions don’t work across services.
+
+**Q22:** What is Saga in one line?
+**A:** Sequence of local transactions with compensating actions.
+
+**Q23:** Difference between choreography and orchestration Saga?
+**A:** Choreography is event-driven; orchestration has central controller.
+
+**Q24:** What is eventual consistency?
+**A:** Temporary inconsistency that resolves over time.
+
+**Q25:** Why eventual consistency is acceptable?
+**A:** Improves availability and scalability.
+
+---
+
+## 🔥 Circuit Breaker
+
+**Q26:** What problem does circuit breaker solve?
+**A:** Prevents cascading failures.
+
+**Q27:** Circuit breaker states?
+**A:** Closed, Open, Half-open.
+
+**Q28:** When circuit breaker opens?
+**A:** Failure threshold exceeded.
+
+**Q29:** Purpose of fallback?
+**A:** Graceful degradation.
+
+**Q30:** Circuit breaker protects whom?
+**A:** The calling service.
+
+---
+
+## 🔥 Idempotency
+
+**Q31:** Why idempotency is critical?
+**A:** Retries are unavoidable in distributed systems.
+
+**Q32:** Best way to implement idempotency?
+**A:** Idempotency key.
+
+**Q33:** How Kafka ensures idempotency at consumer side?
+**A:** Track processed message IDs.
+
+**Q34:** What happens without idempotency?
+**A:** Duplicate business operations.
+
+---
+
+## 🔥 Security (VERY TRICKY)
+
+**Q35:** Is JWT authentication or authorization?
+**A:** Authentication token format.
+
+**Q36:** What is OAuth2?
+**A:** Authorization framework.
+
+**Q37:** Why JWT is preferred in microservices?
+**A:** Stateless and scalable.
+
+**Q38:** Where Spring Security stores authenticated user?
+**A:** SecurityContextHolder (ThreadLocal).
+
+**Q39:** Why Spring Security uses filters not interceptors?
+**A:** Filters execute before Spring MVC.
+
+**Q40:** Why method-level security needs proxy?
+**A:** For authorization interception.
+
+---
+
+## 🔥 Rate Limiting
+
+**Q41:** Best place to implement rate limiting?
+**A:** API Gateway.
+
+**Q42:** Most popular rate limiting algorithm?
+**A:** Token bucket.
+
+**Q43:** Fixed window drawback?
+**A:** Burst traffic at window boundary.
+
+**Q44:** Why Redis used for rate limiting?
+**A:** Distributed counter support.
+
+---
+
+## 🔥 DESIGN PATTERNS (Spring-specific)
+
+**Q45:** Which pattern is @Transactional based on?
+**A:** Proxy pattern.
+
+**Q46:** Which pattern JdbcTemplate uses?
+**A:** Template method.
+
+**Q47:** Which pattern Spring DI represents?
+**A:** Dependency Injection pattern.
+
+**Q48:** Which pattern DispatcherServlet follows?
+**A:** Front Controller.
+
+---
+
+## 🔥 FINAL BOSS QUESTIONS 💥
+
+**Q49:** Can microservices work without Kafka?
+**A:** Yes, but scalability and decoupling suffer.
+
+**Q50:** Monolith vs microservices — which is better?
+**A:** Depends on scale, team size, and deployment needs.
+
+---
+
+## 🏆 FINAL ADVICE (IMPORTANT)
+
+If stuck:
+
+* Say **tradeoffs**
+* Mention **real production constraints**
+* Avoid “always” and “never”
+
+You are **interview-ready**.
+If you want **last 10 killer questions** or **system design lightning round**, say the word and we go ⚡💪
+------------------------------------
+| Interface | Input | Output  | Meaning       |
+| --------- | ----- | ------- | ------------- |
+| Supplier  | ❌     | ✔       | Give me value |
+| Consumer  | ✔     | ❌       | Use value     |
+| Function  | ✔     | ✔       | Transform     |
+| Predicate | ✔     | boolean | Test          |

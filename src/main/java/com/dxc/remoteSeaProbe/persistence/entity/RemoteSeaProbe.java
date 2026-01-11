@@ -1,5 +1,6 @@
 package com.dxc.remoteSeaProbe.persistence.entity;
 
+import com.dxc.remoteSeaProbe.dto.FacingDirection;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,8 +25,9 @@ public class RemoteSeaProbe {
     @Column(name = "initial_longitude")
     private Long initialLongitude;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "direction_facing")
-    private String directionFacing;
+    private FacingDirection directionFacing;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

@@ -1,0 +1,69 @@
+Core Problem (let’s be honest)
+
+“I read first 10 lines of the log and asked you”
+
+This is the single most common mid-level developer weakness.
+
+What seniors do differently
+
+They don’t read logs — they hunt causes.
+
+Logs are not news headlines.
+They are stack traces, and the root cause is almost never at the top.
+
+🧠 Mental Model You Must Adopt (non-negotiable)
+❌ Junior thinking
+
+“App failed → read first error → panic → ask someone”
+
+✅ Senior thinking
+
+“App failed → scroll → find ROOT CAUSE → map to code → verify scope”
+
+You must train your eyes, not your memory.
+
+Naming Pattern Scan (very effective)
+
+Search:
+
+class .*Controller
+
+If you see:
+
+sample.CounterController
+test.CounterController
+
+🚨 STOP. You already found a bug.
+Maven “bean conflict pre-check” trick
+
+Run with debug condition report:
+
+mvn spring-boot:run -Dspring-boot.run.arguments=--debug
+
+Spring will print:
+
+Which beans are created
+
+Why
+
+From where
+
+This is gold for early detection.
+
+DETECT DUPLICATE BEANS EARLY (AUTOMATIC WAY)
+Add this in application.yml (dev only):
+spring:
+  main:
+    allow-bean-definition-overriding: false
+
+👉 This forces Spring to fail FAST
+👉 No silent overrides
+👉 You immediately see conflicts
+
+(Seniors always keep this disabled)
+PREVENT THIS USING SPRING PROFILES (PROFESSIONAL WAY)
+@Profile("test")
+@RestController
+public class CounterController {}
+Now it only loads when:
+spring.profiles.active=test

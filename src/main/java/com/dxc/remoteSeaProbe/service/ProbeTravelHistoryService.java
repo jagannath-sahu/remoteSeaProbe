@@ -19,32 +19,38 @@ public class ProbeTravelHistoryService {
 
     private final RemoteSeaProbeService remoteSeaProbeService;
 
-    private final RemoteSeaProbeMapper mapper;
+    //private final RemoteSeaProbeMapper mapper;
 
-    public ProbeTravelHistoryService(ProbeTravelHistoryRepository historyRepository, RemoteSeaProbeService remoteSeaProbeService, RemoteSeaProbeMapper mapper) {
+    private final ProbeMovementEngine movementEngine;
+
+    public ProbeTravelHistoryService(ProbeTravelHistoryRepository historyRepository, RemoteSeaProbeService remoteSeaProbeService, ProbeMovementEngine movementEngine) {
         this.historyRepository = historyRepository;
         this.remoteSeaProbeService = remoteSeaProbeService;
-        this.mapper = mapper;
+        this.movementEngine = movementEngine;
     }
 
     @Transactional
     public TravelHistoryResponse moveProbe(MovementRequest request) {
 
-        // 1. Load managed entity
-        RemoteSeaProbe probe = remoteSeaProbeService.getProbeEntity(request.getProbeId());
+        RemoteSeaProbe probe =
+                remoteSeaProbeService.getProbeEntity(request.getProbeId());
 
-        // 2. Resolve direction
-        MovementDirection direction =
-                MovementDirection.fromString(request.getAction());
+        Command command = Command.from(request.getAction());
 
-        // 3. Calculate new position
-        var newPosition = direction.move(mapper.toResponse(probe));
+        MovementResult result =
+                movementEngine.execute(probe, command);
 
-        // 4. Create history entry
-        ProbeTravelHistory history =
-                createHistory(probe, direction, newPosition);
+        // update probe state
+        probe.setInitialLatitude((long) result.getCoordinates().latitude());
+        probe.setInitialLongitude((long) result.getCoordinates().longitude());
+        probe.setDirectionFacing(result.getFacing());
 
-        // 5. Save & return
+        ProbeTravelHistory history = new ProbeTravelHistory();
+        history.setProbe(probe);
+        history.setAction(MovementDirection.valueOf(command.name()));
+        history.setLatitude(result.getCoordinates().latitude());
+        history.setLongitude(result.getCoordinates().longitude());
+
         return toResponse(historyRepository.save(history));
     }
 

@@ -4,7 +4,6 @@ I’ll explain it in a way that **you’ll never get confused again**, and you�
 **correct the interviewer (politely 😄)** if needed.
 
 ---
-
 # 🔥 Core Truth First (remember this line)
 
 > **Spring Boot is NOT a replacement for Spring.
@@ -13,7 +12,6 @@ I’ll explain it in a way that **you’ll never get confused again**, and you�
 If you remember only one sentence, remember this.
 
 ---
-
 ## 1️⃣ What exactly is “Spring”?
 
 **Spring = Framework + Libraries**
@@ -43,9 +41,7 @@ Spring ecosystem includes:
 
 👉 **Spring existed long before Spring Boot**
 👉 Spring **does NOT require** Spring Boot
-
 ---
-
 ## 2️⃣ What is Spring Boot then?
 
 Spring Boot is an **opinionated layer on top of Spring**.
@@ -64,9 +60,7 @@ Spring Boot gives:
 
 👉 Spring Boot **uses Spring internally**
 👉 Without Spring, Spring Boot cannot exist
-
 ---
-
 ## 3️⃣ Real pain in traditional Spring (why Boot was created)
 
 ### Before Spring Boot (classic Spring)
@@ -86,33 +80,23 @@ To create a REST API you had to:
 💀 **Too much boilerplate**
 💀 Easy to misconfigure
 💀 Hard for new developers
-
 ---
-
 ### After Spring Boot
 
 You do:
 
-```java
 @SpringBootApplication
 public class App {
    public static void main(String[] args) {
        SpringApplication.run(App.class, args);
    }
 }
-```
-
 Add:
-
-```xml
 spring-boot-starter-web
-```
 
 And you’re DONE.
 
 That’s the magic.
-
----
 
 ## 4️⃣ Feature-by-feature comparison (interview gold)
 
@@ -133,7 +117,6 @@ That’s the magic.
 | Standalone app       | 🚫      | ✅               |
 
 ---
-
 ## 5️⃣ VERY IMPORTANT QUESTION YOU ASKED
 
 ### 👉 “Is there anything in Spring which is NOT in Spring Boot?”
@@ -158,9 +141,7 @@ You can still:
 * Disable auto-configuration
 
 👉 Spring Boot is **Spring + convenience**, not limitation.
-
 ---
-
 ## 6️⃣ What Spring has that Boot “hides” (this is subtle but important)
 
 Spring Boot **hides complexity**, it does NOT remove capability.
@@ -177,7 +158,6 @@ Interview line:
 remain the same.”
 
 ---
-
 ## 7️⃣ When should you NOT use Spring Boot?
 
 This is where opinion matters 👇
@@ -198,9 +178,7 @@ This is where opinion matters 👇
 * Independent deployment
 
 👉 **90% of modern projects should use Spring Boot**
-
 ---
-
 ## 8️⃣ Why interviewers get confused
 
 Many interviewers:
@@ -225,9 +203,7 @@ But what they *rarely hear*:
 > “Spring Boot is built on top of Spring and does not replace it.”
 
 That statement instantly sets you apart.
-
 ---
-
 ## 9️⃣ Best interview answer (short & powerful)
 
 > “Spring is a comprehensive framework providing core features like DI, AOP, and transaction management.
@@ -236,9 +212,7 @@ That statement instantly sets you apart.
  Spring Boot does not remove any Spring functionality; it makes Spring easier to use.”
 
 If you say this confidently — interviewer stops digging.
-
 ---
-
 ## 🔟 One last mental model (never forget)
 
 Think like this:
@@ -247,16 +221,13 @@ Think like this:
 * **Spring Boot = Automatic Transmission + GPS + Airbags**
 
 Same car. Easier to drive.
-
 ---
-
 If you want next:
 
 * Deep dive into **Spring Boot auto-configuration internals**
 * How `@SpringBootApplication` actually works
 * Why `spring.factories` / `AutoConfiguration.imports` matter
 * Tricky Spring vs Boot interview questions
-
 ----------------------------------------------------------------
 Perfect 👍
 This is **advanced-level Spring knowledge**, and once you understand this, you’ll clearly stand above average Spring developers in interviews.
@@ -267,49 +238,37 @@ I’ll split this into **two clear parts**:
 2. **Tricky Spring vs Spring Boot interview questions (with sharp answers)**
 
 I’ll be opinionated and practical.
-
 ---
-
 # PART 1️⃣ — How `@SpringBootApplication` REALLY works
 
 ## 1. `@SpringBootApplication` is NOT magic
 
 It’s just a **meta-annotation**.
 
-```java
 @SpringBootApplication
 public class MyApp {
    public static void main(String[] args) {
       SpringApplication.run(MyApp.class, args);
    }
 }
-```
 
 Behind the scenes:
 
-```java
 @SpringBootApplication
 = @SpringBootConfiguration
 + @EnableAutoConfiguration
 + @ComponentScan
-```
 
 Let’s break these **one by one**.
-
 ---
-
 ## 2️⃣ `@SpringBootConfiguration`
 
-```java
 @SpringBootConfiguration
 public class MyApp {}
-```
 
 This is basically:
 
-```java
 @Configuration
-```
 
 ### What it does:
 
@@ -318,14 +277,9 @@ This is basically:
 * Tells Spring: “this is the root config class”
 
 Nothing special — just a **specialized `@Configuration`**.
-
 ---
-
 ## 3️⃣ `@ComponentScan` (very important)
-
-```java
 @ComponentScan
-```
 
 ### What it does:
 
@@ -343,22 +297,16 @@ Nothing special — just a **specialized `@Configuration`**.
 
 If your main class is in:
 
-```
 com.company.app
-```
 
 and your controller is in:
 
-```
 com.company.web
-```
 
 ❌ It will NOT be scanned.
 
 That’s why Spring Boot apps **usually keep main class at top-level package**.
-
 ---
-
 ## 4️⃣ `@EnableAutoConfiguration` — the REAL magic
 
 This is the heart of Spring Boot.
@@ -366,14 +314,10 @@ This is the heart of Spring Boot.
 ### What it does conceptually:
 
 > “Based on classpath + properties + environment, automatically configure Spring beans”
-
 ---
-
 ### Example: You add this dependency
 
-```xml
 spring-boot-starter-web
-```
 
 Spring Boot sees:
 
@@ -389,9 +333,7 @@ So it automatically:
 * Starts embedded Tomcat
 
 🔥 **No XML, no manual config**
-
 ---
-
 ## 5️⃣ How auto-configuration works INTERNALLY (interview GOLD)
 
 ### Step 1: Auto-configuration classes
@@ -402,9 +344,7 @@ Spring Boot loads **hundreds of auto-config classes** like:
 * `DataSourceAutoConfiguration`
 * `JpaAutoConfiguration`
 * `SecurityAutoConfiguration`
-
 ---
-
 ### Step 2: How are they discovered?
 
 Earlier:
@@ -418,7 +358,6 @@ Now (Spring Boot 3+):
 ```
 META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```
-
 These files list auto-config classes.
 
 ---
@@ -495,7 +434,8 @@ These are **REAL questions** that confuse candidates.
 
 ✅ Correct answer:
 
-> Spring Boot applications start faster because of auto-configuration and embedded server optimizations, but runtime performance is similar to Spring.
+> Spring Boot applications start faster because of auto-configuration and embedded server optimizations,
+but runtime performance is similar to Spring.
 
 ---
 
@@ -561,7 +501,8 @@ Not because XML is removed, but because:
 
 🔥 Strong answer:
 
-> Spring Boot is suitable for both monoliths and microservices. Architecture is a design choice, not a framework limitation.
+> Spring Boot is suitable for both monoliths and microservices. Architecture is a design choice,
+not a framework limitation.
 
 ---
 
@@ -614,4 +555,8 @@ If you want next:
 * Debug why some bean is auto-created
 * Deep dive into Spring lifecycle vs Boot lifecycle
 * Spring Boot 3 + Jakarta migration traps
+----------------
+notMatched  → condition evaluated but failed
+matched     → condition evaluated and passed
+negativeMatches → why something did NOT load
 

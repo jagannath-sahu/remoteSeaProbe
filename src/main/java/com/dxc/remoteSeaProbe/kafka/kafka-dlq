@@ -1,0 +1,349 @@
+Perfect 👍 you’re moving **exactly in the right order** now.
+You already did the *hard* part (multi KafkaTemplate, JSON/String, custom key, producer/consumer configs).
+Now we’ll **activate KafkaErrorConfig in a real way** and then go step-by-step into **
+DLQ → replay → pause/resume** like a real production setup.
+
+I’ll be opinionated here: **this is how Kafka is done today in serious Spring Boot systems**.
+
+---
+
+# 1️⃣ What KafkaErrorConfig REALLY is (mental model first)
+
+Before code, one important correction:
+
+👉 **KafkaErrorConfig itself is NOT DLQ**
+👉 It is the **engine that decides what to do when consumer fails**
+
+DLQ is just **one outcome**.
+
+Flow in real systems:
+
+```
+Consumer
+  ↓
+Business logic
+  ↓
+Exception happens
+  ↓
+DefaultErrorHandler
+  ↓
+Retry (in-memory or backoff)
+  ↓
+Still failing?
+  ↓
+DeadLetterPublishingRecoverer
+  ↓
+DLQ topic
+```
+
+So your KafkaErrorConfig = **traffic police** 🚦
+
+---
+
+# 2️⃣ DLQ DESIGN (How seniors name & think)
+
+Let’s define topics clearly (this matters in interviews & real ops):
+
+```text
+security-match.event.v1          (main topic)
+security-match.event.v1.dlq      (dead letter topic)
+```
+
+Rule:
+
+* DLQ topic **same partitions as main topic**
+* Same key → helps ordering & replay
+
+---
+
+# 3️⃣ KafkaErrorConfig – REAL, WORKING VERSION
+
+You already added KafkaErrorConfig.
+Now we wire it **correctly using Object KafkaTemplate** (important).
+
+### ✅ KafkaErrorConfig.java
+
+```java
+@Configuration
+public class KafkaErrorConfig {
+
+    @Bean
+    public DefaultErrorHandler kafkaErrorHandler(
+            KafkaTemplate<String, Object> jsonKafkaTemplate) {
+
+        // Publish failed message to DLQ
+        DeadLetterPublishingRecoverer recoverer =
+                new DeadLetterPublishingRecoverer(
+                        jsonKafkaTemplate,
+                        (record, ex) ->
+                                new TopicPartition(
+                                        record.topic() + ".dlq",
+                                        record.partition()
+                                )
+                );
+
+        // Retry 3 times with 2 sec gap
+        FixedBackOff backOff = new FixedBackOff(2000L, 3);
+
+        DefaultErrorHandler errorHandler =
+                new DefaultErrorHandler(recoverer, backOff);
+
+        // What exceptions should NOT be retried
+        errorHandler.addNotRetryableExceptions(
+                IllegalArgumentException.class
+        );
+
+        return errorHandler;
+    }
+}
+```
+
+🔥 **Key decision explained**
+
+* `KafkaTemplate<String, Object>` → generic, future-proof
+* No need separate template per event type
+* Seniors always do this
+
+---
+
+# 4️⃣ Main Consumer – Force Failure to See DLQ
+
+### ✅ SecurityMatchEventListener.java
+
+```java
+@Component
+@Slf4j
+public class SecurityMatchEventListener {
+
+    @KafkaListener(
+            topics = "security-match.event.v1",
+            groupId = "security-match-group",
+            containerFactory = "jsonKafkaListenerContainerFactory"
+    )
+    public void consume(SecurityMatchEvent event) {
+
+        log.info("Consumed event: {}", event);
+
+        // Simulate failure
+        if ("security-1".equals(event.getSecurityId())) {
+            throw new RuntimeException("Simulated processing failure");
+        }
+
+        log.info("Processed successfully");
+    }
+}
+```
+
+What will happen now:
+
+* Retry 3 times
+* Then message goes to:
+
+```
+security-match.event.v1.dlq
+```
+
+---
+
+# 5️⃣ DLQ CONSUMER (Very Important for Practice)
+
+DLQ consumer is **NOT business logic**.
+It is **diagnostics + alerting + replay trigger**.
+
+### ✅ DLQ Consumer
+
+```java
+@Component
+@Slf4j
+public class SecurityMatchDLQListener {
+
+    @KafkaListener(
+            topics = "security-match.event.v1.dlq",
+            groupId = "security-match-dlq-group",
+            containerFactory = "jsonKafkaListenerContainerFactory"
+    )
+    public void consumeFromDlq(
+            SecurityMatchEvent event,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset) {
+
+        log.error(
+                "DLQ EVENT -> topic={}, partition={}, offset={}, payload={}",
+                topic, partition, offset, event
+        );
+
+        // store to DB / send alert / mark for replay
+    }
+}
+```
+
+🔥 **Senior rule**
+
+> DLQ consumer should NEVER throw exception again.
+
+---
+
+# 6️⃣ DLQ REPLAY STRATEGY (Production-style)
+
+There are **3 common replay strategies**.
+
+## 🥇 Strategy 1: Manual Replay API (Best)
+
+### Replay Service
+
+```java
+@Service
+@RequiredArgsConstructor
+public class DlqReplayService {
+
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public void replay(SecurityMatchEvent event) {
+        kafkaTemplate.send(
+                "security-match.event.v1",
+                event.getEventId(),
+                event
+        );
+    }
+}
+```
+
+### Replay Controller
+
+```java
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/dlq")
+public class DlqReplayController {
+
+    private final DlqReplayService replayService;
+
+    @PostMapping("/replay")
+    public String replay(@RequestBody SecurityMatchEvent event) {
+        replayService.replay(event);
+        return "Replayed successfully";
+    }
+}
+```
+
+This is **very realistic**.
+Ops team LOVES this.
+
+---
+
+## 🥈 Strategy 2: Batch Replay (DB driven)
+
+* Store DLQ events in DB
+* Cron job picks & replays
+* Used when volume is high
+
+---
+
+## 🥉 Strategy 3: Kafka Streams replay
+
+Advanced, skip for now.
+
+---
+
+# 7️⃣ Pause & Resume Listener (VERY IMPORTANT FEATURE)
+
+Used when:
+
+* DB down
+* Downstream system down
+* You don’t want DLQ explosion
+
+---
+
+## 🧠 How pause/resume works internally
+
+Kafka **does NOT stop polling** by default.
+Spring allows you to pause container.
+
+---
+
+### ✅ Listener with Acknowledgment
+
+```java
+@KafkaListener(
+        topics = "security-match.event.v1",
+        groupId = "security-match-group",
+        containerFactory = "jsonKafkaListenerContainerFactory"
+)
+public void consume(
+        SecurityMatchEvent event,
+        Acknowledgment ack) {
+
+    try {
+        process(event);
+        ack.acknowledge();
+    } catch (Exception e) {
+        throw e; // goes to retry/DLQ
+    }
+}
+```
+
+---
+
+### ✅ Pause / Resume Controller
+
+```java
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/kafka")
+public class KafkaControlController {
+
+    private final KafkaListenerEndpointRegistry registry;
+
+    @PostMapping("/pause")
+    public String pause() {
+        registry.getListenerContainers()
+                .forEach(MessageListenerContainer::pause);
+        return "Kafka listeners paused";
+    }
+
+    @PostMapping("/resume")
+    public String resume() {
+        registry.getListenerContainers()
+                .forEach(MessageListenerContainer::resume);
+        return "Kafka listeners resumed";
+    }
+}
+```
+
+🔥 **This is used in real incidents**.
+
+---
+
+# 8️⃣ What You Have Practiced Now (Very Strong)
+
+You can now confidently say:
+
+✔ Producer with custom key
+✔ String + JSON KafkaTemplate
+✔ Retry with backoff
+✔ Dead Letter Queue
+✔ DLQ consumer
+✔ Manual replay strategy
+✔ Pause / Resume listeners
+
+This is **WAY beyond basic Kafka**.
+
+---
+
+# 9️⃣ What I Recommend Next (My Opinion)
+
+Next best steps (pick order):
+
+1️⃣ **Exactly-once semantics** (idempotent consumer)
+2️⃣ **Redis-based deduplication** (eventId strategy)
+3️⃣ **Schema Registry + version evolution**
+4️⃣ **Consumer lag monitoring**
+
+If you want, next session we can:
+
+> “Break Kafka in 5 different ways and debug like production”
+
+Just tell me 👍
+

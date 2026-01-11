@@ -1,0 +1,60 @@
+org.springframework.context.annotation.ConflictingBeanDefinitionException:
+Annotation-specified bean name 'counterController' for bean class [com.dxc.remoteSeaProbe.test.CounterController]
+conflicts with existing, non-compatible bean definition of same name and class [com.dxc.remoteSeaProbe.sample.CounterController]
+
+Build passes (because compilation is fine)
+
+Runtime fails (because Spring context loads beans)
+💥 Boom — runtime failure.
+
+| Phase               | What happens                   |
+| ------------------- | ------------------------------ |
+| `mvn clean install` | Just compiles classes          |
+| Spring Boot startup | Creates beans + scans packages |
+
+Bean conflicts are runtime-only problems.
+This is why seniors never trust build success alone.
+
+Option 1 (BEST PRACTICE): Delete test/sample controller
+
+If this is NOT needed in prod:
+
+com.dxc.remoteSeaProbe.test.CounterController
+or
+com.dxc.remoteSeaProbe.sample.CounterController
+👉 Delete it
+👉 Or move it to src/test/java
+
+✅ Clean
+✅ Professional
+✅ No hacks
+
+This is what I would do immediately.
+
+🥈 Option 2: Exclude test/sample package from component scan
+
+If you want to keep it for reference:
+
+@SpringBootApplication
+@ComponentScan(
+    basePackages = "com.dxc.remoteSeaProbe",
+    excludeFilters = @ComponentScan.Filter(
+        type = FilterType.REGEX,
+        pattern = "com.dxc.remoteSeaProbe.test.*"
+    )
+)
+public class RemoteSeaProbeApplication {}
+👍 Good
+👎 Slightly noisy config
+
+Option 3: Explicit bean names (NOT recommended long-term)
+@RestController("counterControllerTest")
+public class CounterController {}
+And:
+
+@RestController("counterControllerSample")
+public class CounterController {}
+
+⚠️ This fixes the symptom, not the problem
+⚠️ I don’t recommend this for controllers
+-----------------------------------------------------------------------

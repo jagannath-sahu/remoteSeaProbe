@@ -13,24 +13,31 @@ import org.springframework.util.backoff.FixedBackOff;
 public class KafkaErrorConfig {
 
     @Bean
-    public DefaultErrorHandler errorHandler(@Qualifier("jsonKafkaTemplate") KafkaTemplate<String, Object> template) {
+    public DefaultErrorHandler kafkaErrorHandler(@Qualifier("jsonKafkaTemplate")
+            KafkaTemplate<String, Object> jsonKafkaTemplate) {
+
+        // Publish failed message to DLQ
         DeadLetterPublishingRecoverer recoverer =
-                new DeadLetterPublishingRecoverer(template,
+                new DeadLetterPublishingRecoverer(
+                        jsonKafkaTemplate,
                         (record, ex) ->
                                 new TopicPartition(
-                                        "posdaas.security-match.dlq",
+                                        record.topic() + ".dlq",
                                         record.partition()
                                 )
                 );
 
-        //Processing fails then Retry 3 times
-        //Still fails then Sent to DLQ
-        //Offset Committed only after DLQ
-        DefaultErrorHandler handler =
-                new DefaultErrorHandler(recoverer, new FixedBackOff(2000L, 3));
+        // Retry 3 times with 2 sec gap
+        FixedBackOff backOff = new FixedBackOff(2000L, 3);
 
-        handler.addNotRetryableExceptions(IllegalArgumentException.class);
-        return handler;
+        DefaultErrorHandler errorHandler =
+                new DefaultErrorHandler(recoverer, backOff);
+
+        // What exceptions should NOT be retried
+        errorHandler.addNotRetryableExceptions(
+                IllegalArgumentException.class
+        );
+
+        return errorHandler;
     }
 }
-
