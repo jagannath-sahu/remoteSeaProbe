@@ -1,0 +1,35 @@
+public class MovementResult {
+
+    private final Coordinates coordinates;
+    private final String facing;
+
+    MovementResult(Coordinates coordinates, String facing) {
+        this.coordinates = coordinates;
+        this.facing = facing;
+    }
+
+    public static MovementResultBuilder builder() {
+        return new MovementResultBuilder();
+    }
+
+    public static class MovementResultBuilder {
+        private Coordinates coordinates;
+        private String facing;
+
+        MovementResultBuilder() {}
+
+        public MovementResultBuilder coordinates(Coordinates coordinates) {
+            this.coordinates = coordinates;
+            return this;
+        }
+
+        public MovementResultBuilder facing(String facing) {
+            this.facing = facing;
+            return this;
+        }
+
+        public MovementResult build() {
+            return new MovementResult(coordinates, facing);
+        }
+    }
+}
