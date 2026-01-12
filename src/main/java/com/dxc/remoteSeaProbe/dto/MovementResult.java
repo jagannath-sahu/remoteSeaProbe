@@ -6,6 +6,6 @@ import lombok.Getter;
 @Builder
 @Getter
 public class MovementResult {
-    private Coordinates coordinates;
-    private FacingDirection facing;
+    Coordinates coordinates;
+    FacingDirection facing;
 }

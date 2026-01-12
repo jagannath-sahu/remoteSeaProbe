@@ -1,7 +1,7 @@
-/*
 package com.dxc.remoteSeaProbe.service;
 
 import com.dxc.remoteSeaProbe.dto.CreateProbeRequest;
+import com.dxc.remoteSeaProbe.dto.FacingDirection;
 import com.dxc.remoteSeaProbe.dto.ProbeResponse;
 import com.dxc.remoteSeaProbe.mapper.RemoteSeaProbeMapper;
 import com.dxc.remoteSeaProbe.persistence.entity.RemoteSeaProbe;
@@ -44,7 +44,7 @@ class RemoteSeaProbeServiceTest {
         savedProbe.setName("Probe-1");
         savedProbe.setInitialLatitude((long) 12.5);
         savedProbe.setInitialLongitude((long) 77.6);
-        savedProbe.setDirectionFacing("NORTH");
+        savedProbe.setDirectionFacing(FacingDirection.valueOf("NORTH"));
         savedProbe.setCreatedAt(LocalDateTime.now());
 
         when(probeRepository.save(any(RemoteSeaProbe.class))).thenReturn(savedProbe);
@@ -85,4 +85,3 @@ class RemoteSeaProbeServiceTest {
     }
 }
 
-*/

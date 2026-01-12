@@ -32,13 +32,11 @@ public class ProbeTravelHistoryService {
     @Transactional
     public TravelHistoryResponse moveProbe(MovementRequest request) {
 
-        RemoteSeaProbe probe =
-                remoteSeaProbeService.getProbeEntity(request.getProbeId());
+        RemoteSeaProbe probe = remoteSeaProbeService.getProbeEntity(request.getProbeId());
 
         Command command = Command.from(request.getAction());
 
-        MovementResult result =
-                movementEngine.execute(probe, command);
+        MovementResult result = movementEngine.execute(probe, command);
 
         // update probe state
         probe.setInitialLatitude((long) result.getCoordinates().latitude());
